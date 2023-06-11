@@ -15,5 +15,8 @@ target_link_libraries(talker cros)
 add_executable(listener listener.c)
 target_link_libraries(listener cros)
 
+add_executable(distantace_sensor-test distantace_sensor-test.c)
+target_link_libraries(distantace_sensor-test cros)
+
 add_executable(performance-test performance-test.cpp)
 target_link_libraries(performance-test cros m)
