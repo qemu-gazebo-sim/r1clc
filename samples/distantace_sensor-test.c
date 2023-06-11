@@ -33,46 +33,11 @@
 
 #define ROS_MASTER_PORT 11311
 #define ROS_MASTER_ADDRESS "127.0.0.1"
+
 // #define ROS_MASTER_ADDRESS "http://vander-Vostro-14-5480"
 
 CrosNode * node;                    //! Pointer to object storing the ROS node. This object includes all the ROS node state variables
 static unsigned char exit_flag = 0; //! ROS node loop exit flag. When set to 1 the cRosNodeStart() function exits
-
-// This callback will be invoked when the subscriber receives a message
-static CallbackResponse callback_sub(cRosMessage * message, void* data_context) {
-    cRosMessageField * data_field = cRosMessageGetField(message, "data");
-
-    if (data_field != NULL) {
-        ROS_INFO(node, "I heard: [%s]\n", data_field->data.as_string);
-    }
-
-    return 0; // 0=success
-}
-
-// This callback will be invoked when the service provider receives a service call
-static CallbackResponse callback_srv_add_two_ints(cRosMessage * request, cRosMessage * response, void* data_context) {
-    cRosMessageField * a_field = cRosMessageGetField(request, "a");
-    cRosMessageField * b_field = cRosMessageGetField(request, "b");
-
-    // cRosMessageFieldsPrint(request, 0);
-
-    if ((a_field != NULL) && (a_field != NULL)) {
-        int64_t a = a_field->data.as_int64;
-        int64_t b = b_field->data.as_int64;
-
-        int64_t response_val = a + b;
-
-        cRosMessageField * sum_field = cRosMessageGetField(response, "sum");
-
-        if (sum_field != NULL) {
-            sum_field->data.as_int64 = response_val;
-            ROS_INFO(node, "Service add 2 ints. Args: {a: %lld, b: %lld}. Resp: %lld\n", (long long) a, (long long) b,
-                     (long long) response_val);
-        }
-    }
-
-    return 0; // 0=success
-}
 
 // This callback will be invoked when the service provider receives a service call
 static CallbackResponse callback_range(cRosMessage * message, void* data_context) {
@@ -85,22 +50,8 @@ static CallbackResponse callback_range(cRosMessage * message, void* data_context
         ROS_INFO(node, "I heard: [%d]\n", range);
     }
 
-    return 0; // 0=success
+    return 0;  // 0=success
 }
-
-static CallbackResponse callback_clock(cRosMessage * message, void* data_context) {
-    cRosMessageField * range_field = cRosMessageGetField(message, "clock");
-
-    printf("entrei na callback_clock");
-    if (range_field != NULL) {
-        int64_t range = range_field->data.as_int64;
-
-        ROS_INFO(node, "I heard: [%lf]\n", range);
-    }
-    
-    return 0; // 0=success
-}
-
 
 // Ctrl-C-and-'kill' event/signal handler: (this code is no strictly necessary for a simple example and can be removed)
 #ifdef _WIN32
@@ -117,14 +68,14 @@ static BOOL WINAPI exit_deamon_handler(DWORD sig) {
     switch (sig) {
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT:
-            SetConsoleCtrlHandler(exit_deamon_handler, FALSE); // Remove the handler
+            SetConsoleCtrlHandler(exit_deamon_handler, FALSE);  // Remove the handler
             printf("Signal %u received: exiting safely.\n", sig);
             exit_flag = 1;      // Cause the exit of cRosNodeStart loop (safe exit)
             sig_handled = TRUE; // Indicate that this signal is handled by this function
             break;
 
         default:
-            sig_handled = FALSE; // Indicate that this signal is not handled by this functions, so the next handler function of the list will be called
+            sig_handled = FALSE;  // Indicate that this signal is not handled by this functions, so the next handler function of the list will be called
             break;
     }
 
@@ -136,7 +87,7 @@ static DWORD set_signal_handler(void) {
     DWORD ret;
 
     if (SetConsoleCtrlHandler(exit_deamon_handler, TRUE)) {
-        ret = 0; // Success setting the control handler
+        ret = 0;  // Success setting the control handler
     } else {
         ret = GetLastError();
         printf("Error setting termination signal handler. Error code=%u\n", ret);
@@ -156,7 +107,7 @@ static void exit_deamon_handler(int sig) {
     printf("Signal %i received: exiting safely.\n", sig);
     sigaction(SIGINT, &old_int_signal_handler, NULL);
     sigaction(SIGTERM, &old_term_signal_handler, NULL);
-    exit_flag = 1; // Indicate the exit of cRosNodeStart loop (safe exit)
+    exit_flag = 1;  // Indicate the exit of cRosNodeStart loop (safe exit)
 }
 
 // Sets the signal handler functions of SIGINT and SIGTERM: exit_deamon_handler
@@ -187,15 +138,15 @@ static int set_signal_handler(void) {
 #endif
 
 int main(int argc, char ** argv) {
-    char path[4097]; // We need to tell our node where to find the .msg files that we'll be using
+    char path[4097];  // We need to tell our node where to find the .msg files that we'll be using
     const char * node_name;
-    int subidx; // Index (identifier) of the created subscriber
+    int subidx;  // Index (identifier) of the created subscriber
     cRosErrCodePack err_cod;
 
     if (argc > 1) {
         node_name = argv[1];
     } else {
-        node_name = "/dd"; // Default node name if no command-line parameters are specified
+        node_name = "/dd";  // Default node name if no command-line parameters are specified
     }
 
     getcwd(path, sizeof(path));
@@ -221,9 +172,8 @@ int main(int argc, char ** argv) {
 
     // Create a service provider named /sum of type "roscpp_tutorials/TwoInts" and supply a callback for received calls
     // err_cod = cRosApiRegisterSubscriber(node, "/chatter", "std_msgs/String", callback_sub, NULL, NULL, 0, &subidx);
-    err_cod = cRosApiRegisterSubscriber(node, "/range/distance_sensor", "std_msgs/Int32", callback_range, NULL, NULL, 0, &subidx);
-    // err_cod = cRosApiRegisterSubscriber(node, "/clock", "rosgraph_msgs/clock", callback_clock, NULL, NULL, 0, NULL);
-
+    err_cod = cRosApiRegisterSubscriber(node, "/range/distance_sensor", "std_msgs/Int32", callback_range, NULL, NULL, 0,
+                                        &subidx);
 
     if (err_cod != CROS_SUCCESS_ERR_PACK) {
         cRosPrintErrCodePack(err_cod,
